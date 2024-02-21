@@ -206,6 +206,11 @@ class health_trend():
         return table
     def calculate_moving_average(self, data, window_size):
         return data.rolling(window=window_size).mean()
+    ## To do
+    ## Stair case fit function
+    ## Power law fit function
+    ## Make the fit function an input parameter
+    ## Time range based predictions
 
 hp = health_trend(df,health_std,health_goal)
 hp.health_stat_extractor()
