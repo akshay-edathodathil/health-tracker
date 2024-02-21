@@ -37,6 +37,7 @@ df['Date'] = pd.to_datetime(df['Date']).dt.date
 #df.set_index('Date', inplace=True)  # Set 'date' as the index
 #heath_std_df = pd.DataFrame(['Weight','BMI','BodyFat', 'FatFreeBodyWeight','SubcutFat','ViscFat','BodyWater',
  #             'SkelMuscle','MuscleMass','BoneMass','Protein','BMR'])
+# Manually enter the weight range shown in the app
 health_std = {'Weight': [50.37, 68.08],
      'BMI': [18.5, 25],
      'BodyFat':[13, 17],
