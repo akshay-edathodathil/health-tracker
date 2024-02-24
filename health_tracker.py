@@ -20,7 +20,7 @@ import csv
 #import pdflatex
 
 
-df = pd.read_csv('./renpho_data/240221_Renpho Health-Akshay.csv', index_col=None, header=None)
+df = pd.read_csv('./renpho_data/240224_Renpho Health-Akshay.csv', index_col=None, header=None)
 df = df.iloc[1:] # drop column the labels
 #df = df.iloc[:,:1] #drop the first column
 df.columns = ['Date','Weight','BMI','BodyFat', 'FatFreeBodyWeight','SubcutFat','ViscFat','BodyWater',
@@ -37,8 +37,8 @@ df['Date'] = pd.to_datetime(df['Date']).dt.date
 #df.set_index('Date', inplace=True)  # Set 'date' as the index
 #heath_std_df = pd.DataFrame(['Weight','BMI','BodyFat', 'FatFreeBodyWeight','SubcutFat','ViscFat','BodyWater',
  #             'SkelMuscle','MuscleMass','BoneMass','Protein','BMR'])
-# Manually enter the weight range shown in the app
-health_std = {'Weight': [50.37, 68.08],
+# Manually enter the weight range shown in the app #50.37
+health_std = {'Weight': [55, 68.08],
      'BMI': [18.5, 25],
      'BodyFat':[13, 17],
      'SubcutFat':[8.6, 16.7],
@@ -72,6 +72,7 @@ class health_trend():
         local_df = df.copy()  # Work on a local copy
         local_df.set_index('Date', inplace=True)  # Set 'date' as the index
         x =  np.arange(local_df.index.size )
+        #self.power_law_fit(local_df[healthparam], x, goal)
         #fit = np.polyfit(x, df[healthparam], deg=1)
         start_val = local_df[healthparam].iloc[0]
         current_val = local_df[healthparam].iloc[-1]
@@ -210,8 +211,67 @@ class health_trend():
     ## To do
     ## Stair case fit function
     ## Power law fit function
-    ## Make the fit function an input parameter
-    ## Time range based predictions
+    def power_law_fit(self, healthparam, goal):
+        local_df = df.copy()  # Work on a local copy
+        local_df.set_index('Date', inplace=True)  # Set 'date' as the index
+        x =  np.arange(local_df.index.size )
+        #self.power_law_fit(local_df[healthparam], x, goal)
+        #fit = np.polyfit(x, df[healthparam], deg=1)
+        start_val = local_df[healthparam].iloc[0]
+        current_val = local_df[healthparam].iloc[-1]
+        log_x = np.log(x)
+        log_y = np.log(local_df[healthparam])
+        results_power_law = sm.OLS(log_y, sm.add_constant(log_x)).fit()
+        # Intercept (log(a)) and slope (b)
+        a = np.exp(results_power_law.params[0])
+        b = results_power_law.params[1]
+        intercept, slope = results_power_law.params
+        print(f"==============  {healthparam}  ===============")
+        print (f"{healthparam} slope : " + str(round(slope,3)) + f" units of {healthparam} per day")
+        #print ("Intercept : " + str(fit[1]))
+        asof = str(df['Date'].iloc[-1])
+        days2root = round((np.log(goal) - intercept)/slope) - local_df.index.size
+        rootDate =  local_df.index[-1] + datetime.timedelta(days2root)
+       # rootDate = messages_per_day.index[-1] + datetime.timedelta(round(-fit[1]/fit[0],0))
+        print(str(days2root) + f" more days until the {healthparam} goal of {goal} (on {rootDate})")
+        
+        r_squared = results_power_law.rsquared
+        print(f"R-squared: {r_squared:0.3f}")
+        
+        # To get the p-values:
+        p_values = results_power_law.pvalues[0]
+        print(f"P-value: {p_values}")
+        predicted_log_y = results_power_law.predict(sm.add_constant(log_x))
+        predicted_y = np.exp(predicted_log_y)
+
+        fg = plt.figure(figsize=(10, 6))
+        plt.plot(local_df.index, df[healthparam], color = plt.cm.tab10(3), marker='o', linestyle = '-', alpha= 0.8)
+        plt.grid(visible=1)
+        plt.xlabel('Date')
+        plt.ylabel(healthparam)
+        plt.title(f'{healthparam} change over diet (as of {asof})')
+       
+        #plot the fit
+        #fit_function = np.poly1d(fit)
+        
+        new_dates = [local_df.index[-1] + datetime.timedelta(days=x) for x in range(np.int64(days2root+2))]
+        #new_dates = pd.date_range(start=local_df.index[-1] ,periods=days2root, freq='D')
+        extended_index = local_df.index.union(new_dates)
+        # If your model included an intercept, you need to add a constant to new_x
+        #new_x_with_const = sm.add_constant(new_x)
+        #predited_y = fit_function(np.arange(extended_index.size))
+        # Use the model to make predictions
+        predicted_y = results_power_law.predict(sm.add_constant(np.arange(extended_index.size)))
+        #date_range = pd.date_range(start_date, periods=25, freq='D')
+        plt.plot(extended_index, predicted_y, color = plt.cm.tab10(3), linestyle = 'dashed')
+        plt.axhline(y=goal, color='g', linestyle='--',linewidth = 2)
+        plt.fill_between(extended_index, self.health_std[healthparam][0], self.health_std[healthparam][1], color='green', alpha=0.2)  # alpha controls the transparency
+    
+        plt.text(extended_index[np.int64(extended_index.size/3)], goal+1, str(days2root) + f" more days until the {healthparam} goal of {goal} (on {rootDate})", fontsize=12)
+        plt.text(0.5, 0.9, f'y = {slope:.3f}x + {intercept:.3f}', transform=plt.gca().transAxes, fontsize=12, verticalalignment='center')
+        plt.show()
+        plt.close()
+        return start_val, current_val, goal, slope, r_squared, p_values, days2root, rootDate, fg
 
 hp = health_trend(df,health_std,health_goal)
 hp.health_stat_extractor()
