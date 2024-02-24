@@ -49,7 +49,7 @@ health_std = {'Weight': [50.37, 68.08],
      'BoneMass':[1.86,3.10],
      'Protein':[16,20],
      'BMR':[1383,1600]}
-
+#Input your goals here
 health_goal = {'Weight': 59,
      'BMI': [18.5, 25],
      'BodyFat':17,
