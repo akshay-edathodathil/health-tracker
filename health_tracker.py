@@ -212,6 +212,7 @@ class health_trend():
     ## Stair case fit function
     ## Power law fit function
     def power_law_fit(self, healthparam, goal):
+        ## SVD error warning. Will be fixed
         local_df = df.copy()  # Work on a local copy
         local_df.set_index('Date', inplace=True)  # Set 'date' as the index
         x =  np.arange(local_df.index.size )
