@@ -17,10 +17,11 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 import csv
+import seaborn as sns
 #import pdflatex
 
 
-df = pd.read_csv('./renpho_data/240224_Renpho Health-Akshay.csv', index_col=None, header=None)
+df = pd.read_csv('./renpho_data/240306_Renpho Health-Akshay.csv', index_col=None, header=None)
 df = df.iloc[1:] # drop column the labels
 #df = df.iloc[:,:1] #drop the first column
 df.columns = ['Date','Weight','BMI','BodyFat', 'FatFreeBodyWeight','SubcutFat','ViscFat','BodyWater',
@@ -50,7 +51,7 @@ health_std = {'Weight': [55, 68.08],
      'Protein':[16,20],
      'BMR':[1383,1600]}
 #Input your goals here
-health_goal = {'Weight': 59,
+health_goal = {'Weight': 57,
      'BMI': [18.5, 25],
      'BodyFat':17,
      'SubcutFat':16.7,
@@ -291,3 +292,40 @@ hp.summary_table()
 #  ]
         
 # hp.summary_table(values)
+
+class health_corr():
+    def __init__(self,df):
+        self.df = df
+        self.df_nodate = df.iloc[:,1:]
+    
+    def correlation_heatmap(self):
+        correlation_matrix = self.df_nodate.corr()
+
+        # Generate a mask for the upper triangle
+        mask = np.triu(np.ones_like(correlation_matrix, dtype=bool))
+        
+        # Set up the matplotlib figure
+        plt.figure(figsize=(10, 8))
+        
+        # Draw the heatmap with the mask and correct aspect ratio
+        sns.heatmap(correlation_matrix, mask=mask, cmap='coolwarm', annot=True, fmt=".2f", vmin=-1, vmax=1)
+
+        plt.title('Correlation Heatmap')
+        corr_file = './renpho_figures/' + str(self.df['Date'].iloc[-1]) + '_renpho_correlation_matrix.png'
+        plt.savefig(corr_file, format = 'png')
+        plt.show()
+        return correlation_matrix
+    
+    def pairplot(self):
+        sns.pairplot(self.df_nodate)
+        pair_file = './renpho_figures/' + str(self.df['Date'].iloc[-1]) + '_renpho_pair_plot.png'
+        plt.savefig(pair_file, format = 'png')
+
+
+cor= health_corr(df)
+cor.correlation_heatmap()
+cor.pairplot()
+        
+        
+        
+    
