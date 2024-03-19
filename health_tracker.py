@@ -21,8 +21,10 @@ import seaborn as sns
 #import pdflatex
 
 
-df = pd.read_csv('./renpho_data/240306_Renpho Health-Akshay.csv', index_col=None, header=None)
+df = pd.read_csv('./renpho_data/240319_Renpho Health-Akshay.csv', index_col=None, header=None)
 df = df.iloc[1:] # drop column the labels
+df = df.iloc[:,:15]
+# df = df.iloc[-30:]
 #df = df.iloc[:,:1] #drop the first column
 df.columns = ['Date','Weight','BMI','BodyFat', 'FatFreeBodyWeight','SubcutFat','ViscFat','BodyWater',
               'SkelMuscle','MuscleMass','BoneMass','Protein','BMR','MetAge','Remarks']
@@ -51,11 +53,11 @@ health_std = {'Weight': [55, 68.08],
      'Protein':[16,20],
      'BMR':[1383,1600]}
 #Input your goals here
-health_goal = {'Weight': 57,
-     'BMI': [18.5, 25],
-     'BodyFat':17,
-     'SubcutFat':16.7,
-     'ViscFat':5,
+health_goal = {'Weight': 56,
+     'BMI': 19.5,
+     'BodyFat':16,
+     'SubcutFat':15,
+     'ViscFat':4,
      'BodyWater':[50,65],
      'SkelMuscle':[49,59],
      'MuscleMass':48,
@@ -324,8 +326,33 @@ class health_corr():
 
 cor= health_corr(df)
 cor.correlation_heatmap()
-cor.pairplot()
+# cor.pairplot()
         
         
+        #### PAIRWISE RELATIONSHIP
         
-    
+class PairwiseRelation:
+    def __init__(self, df):
+        self.df = df
+        
+    def linear(self, healthparam1, healthparam2):
+        model = sm.OLS(self.df[healthparam1], sm.add_constant(self.df[healthparam2])).fit() #add intercept term
+        intercept, slope = model.params
+        asof = str(self.df['Date'].iloc[-1])
+        print(f"==============  {healthparam1} & {healthparam2}  ===============")
+        print (f"{healthparam2} slope : " + str(round(slope,3)) + f" units of {healthparam2} per unit {healthparam1}")
+        plt.figure(figsize=(10, 8))
+        plt.plot(self.df[healthparam1], self.df[healthparam2], color = plt.cm.tab10(3), marker='o', linestyle = '-', alpha= 0.8)
+        plt.grid(visible=1)
+        plt.xlabel(f'{healthparam1}')
+        plt.ylabel(f'{healthparam2}')
+        plt.title(f'{healthparam1} vs {healthparam2} change over diet (as of {asof})')
+        plt.text(0.5, 0.9, f'y = {slope:.3f}x + {intercept:.3f}', transform=plt.gca().transAxes, fontsize=12, verticalalignment='center')
+        plt.show()
+        
+pair = PairwiseRelation(df)
+pair.linear('Weight','BodyFat')
+pair.linear('Weight', 'SubcutFat')
+pair.linear('SubcutFat','BodyFat')
+pair.linear('Weight', 'BMI')
+pair.linear('Weight', 'ViscFat')
